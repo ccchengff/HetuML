@@ -1,0 +1,21 @@
+######################
+### Set targets ######
+######################
+
+# whether to compile parallel ml 
+# based on parameter server
+set(HETU_PARALLEL_ML true)
+
+# PyBind11 2.6.2
+# - pybind11_DIR: cmake directory of pybind11, 
+#                 can be obtained by `python3 -m pybind11 --cmakedir` 
+#                 pybind11 has been installed via pip
+# if not found, we'll download and compile it in time
+set(pybind11_DIR)
+
+# ZMQ 4.3.2
+# - ZMQ_ROOT: root directory of zeromq
+# - ZMQ_BUILD: build directory of zeromq
+# if not found, we'll download and compile it in time
+set(ZMQ_ROOT)
+set(ZMQ_BUILD)
