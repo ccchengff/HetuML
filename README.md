@@ -11,7 +11,7 @@ An Efficient Machine Learning Library for Hetu.
 - Protobuf >= 3.0.0
 - OpenMP
 
-3. Configuration: Before compilation, please refer to your configuration by `cp cmake/config.cmake.template config.cmake`. Modify the configuration as needed.
+3. Configuration: Before compilation, please refer to your configuration by `cp cmake/config.cmake.template cmake/config.cmake`. Modify the configuration as needed.
 
 4. Compile HetuML via the following commands
 ```shell
