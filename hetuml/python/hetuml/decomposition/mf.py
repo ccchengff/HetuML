@@ -8,6 +8,7 @@ import numpy as np
 from typing import Optional
 
 class NMF(MLBase):
+    ps_data_type = "float"
 
     def __init__(self, 
                  embedding_dim: int = 8, 
@@ -15,6 +16,7 @@ class NMF(MLBase):
                  learning_rate: float = 0.1, 
                  l1_reg: float = 0.0, 
                  l2_reg: float = 0.0, 
+                 parallel=False, 
                  aux_args=dict()):
         assert embedding_dim > 0, "Embedding dimemsion should be positive"
         assert num_epoch > 0, "Number of epochs should be positive"
@@ -27,8 +29,12 @@ class NMF(MLBase):
             num_epoch=num_epoch,
             learning_rate=learning_rate,
             l1_reg=l1_reg,
-            l2_reg=l2_reg)
-        handle = _C.MF(args_dict_to_string(args))
+            l2_reg=l2_reg, 
+            parallel=parallel)
+        if parallel:
+            handle = _C.ParallelMF(args_dict_to_string(args))
+        else:
+            handle = _C.MF(args_dict_to_string(args))
         super(NMF, self).__init__(handle, args)
     
     def fit(self, 

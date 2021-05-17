@@ -18,7 +18,8 @@ class KNN(MLBase):
         args = join_args(
             aux_args=aux_args, 
             num_label=num_label, 
-            num_neighbor=num_neighbor)
+            num_neighbor=num_neighbor, 
+            parallel=False)
         handle = _C.KNN(args_dict_to_string(args))
         super(KNN, self).__init__(handle, args)
     

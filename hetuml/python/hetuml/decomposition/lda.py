@@ -6,6 +6,7 @@ from hetuml.data import Corpus
 import numpy as np
 
 class LDA(MLBase):
+    ps_data_type = "int"
 
     def __init__(self, 
                  num_words: int, 
@@ -14,6 +15,7 @@ class LDA(MLBase):
                  alpha: float = 0.0, 
                  beta: float = 0.001, 
                  long_doc_thres: int = 600, 
+                 parallel=False, 
                  aux_args=dict()):
         assert num_words > 0, "Number of words should be positive"
         assert num_topics > 0, "Number of topics should be positive"
@@ -28,8 +30,12 @@ class LDA(MLBase):
             num_iters=num_iters,
             alpha=alpha,
             beta=beta,
-            long_doc_thres=long_doc_thres)
-        handle = _C.LDA(args_dict_to_string(args))
+            long_doc_thres=long_doc_thres, 
+            parallel=parallel)
+        if parallel:
+            handle = _C.ParallelLDA(args_dict_to_string(args))
+        else:
+            handle = _C.LDA(args_dict_to_string(args))
         super(LDA, self).__init__(handle, args)
     
     def fit(self, train_data: Corpus) -> None:

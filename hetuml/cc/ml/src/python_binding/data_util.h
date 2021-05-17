@@ -158,7 +158,7 @@ public:
     return matrix == nullptr ? false : matrix->is_dense();
   }
   
-  std::shared_ptr<DataMatrix<V>> matrix;
+  std::unique_ptr<DataMatrix<V>> matrix;
 };
 
 template <typename V>
@@ -190,7 +190,7 @@ public:
     return dataset == nullptr ? false : dataset->is_dense();
   }
   
-  std::shared_ptr<Dataset<label_t, V>> dataset;
+  std::unique_ptr<Dataset<label_t, V>> dataset;
 };
 
 template <typename V>
@@ -198,7 +198,7 @@ class COOMatrixWrapper {
 public:
   COOMatrixWrapper(const std::string& path) {
     hetu::ml::mf::mf_problem prob = hetu::ml::mf::read_problem(path);
-    this->matrix = std::make_shared<hetu::ml::mf::mf_problem>(prob);
+    this->matrix = std::make_unique<hetu::ml::mf::mf_problem>(prob);
     this->num_rows = this->matrix->m;
     this->num_cols = this->matrix->n;
     size_t nnz = this->matrix->nnz;
@@ -236,6 +236,11 @@ public:
     }
   }
 
+  ~COOMatrixWrapper() {
+    if (this->matrix != nullptr)
+      delete[]this->matrix->R;
+  }
+
   inline size_t get_num_rows() const {
     return num_rows;
   }
@@ -253,7 +258,7 @@ public:
   std::vector<V> values;
   size_t num_rows;
   size_t num_cols;
-  std::shared_ptr<hetu::ml::mf::mf_problem> matrix;
+  std::unique_ptr<hetu::ml::mf::mf_problem> matrix;
 };
 
 class CorpusWrapper {
@@ -284,7 +289,7 @@ public:
     return corpus == nullptr ? -1 : corpus->GetDocSize(id);
   }
 
-  std::shared_ptr<hetu::ml::lda::Corpus> corpus;
+  std::unique_ptr<hetu::ml::lda::Corpus> corpus;
 };
 
 #endif // __HETU_ML_PYTHON_DATA_UTIL_H_

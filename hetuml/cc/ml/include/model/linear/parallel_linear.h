@@ -127,6 +127,7 @@ public:
       args, LogisticLoss<Val>::NAME, 
       NegYLogLossMetric<Val, label_t, Val>::NAME) } {}
   inline const char* name() const override { return "LogisticRegression"; }
+  inline bool use_neg_y() const override { return true; }
 };
 
 template <typename Val>
@@ -137,6 +138,7 @@ public:
       args, HingeLoss<Val>::NAME, 
       HingeLossMetric<Val, label_t, Val>::NAME) } {}
   inline const char* name() const override { return "SupportVectorMachine"; }
+  inline bool use_neg_y() const override { return true; }
 };
 
 template <typename Val>

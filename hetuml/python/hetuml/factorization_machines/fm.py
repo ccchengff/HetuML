@@ -4,6 +4,7 @@ from hetuml import _C
 from hetuml.model_base import SupervisedMLBase, join_args, args_dict_to_string
 
 class FM(SupervisedMLBase):
+    ps_data_type = "float"
 
     def __init__(self, 
                  embedding_dim: int = 16, 
@@ -14,6 +15,7 @@ class FM(SupervisedMLBase):
                  l2_reg: float = 0.0, 
                  loss: str = "logistic", 
                  metrics: str = "log-loss", 
+                 parallel=False, 
                  aux_args=dict()):
         assert embedding_dim > 0, "Embedding dimension should be positive"
         assert num_epoch > 0, "Number of epochs should be positive"
@@ -31,8 +33,12 @@ class FM(SupervisedMLBase):
             l1_reg=l1_reg, 
             l2_reg=l2_reg, 
             loss=loss, 
-            metrics=metrics)
-        handle = _C.FM(args_dict_to_string(args))
+            metrics=metrics, 
+            parallel=parallel)
+        if parallel:
+            handle = _C.ParallelFM(args_dict_to_string(args))
+        else:
+            handle = _C.FM(args_dict_to_string(args))
         super(FM, self).__init__(handle, args)
     
     def use_neg_y(self):

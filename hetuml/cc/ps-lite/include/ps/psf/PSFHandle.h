@@ -73,7 +73,7 @@ template <typename Val> struct KVServerMatrixHandle {
         for (size_t j = 0; j < value_set.size(); j++)
           res.vals[j] = value_set[j];
       } else {
-        LG << "Key does not exist on PS in DensePull" << k;
+        LF << "Key does not exist on PS in DensePull" << k;
       }
       break;
     }
@@ -86,7 +86,7 @@ template <typename Val> struct KVServerMatrixHandle {
         CHECK_EQ(len, store[k].size()) << " size mismatch in DensePush";
       } else {
         store[k].assign(len, 0);
-        LG << "Key does not exist on PS in DensePush: " << k;
+        LG << "[WARN] Key does not exist on PS in DensePush: " << k;
       }
       auto &value_set = store[k];
       for (size_t j = 0; j < value_set.size(); j++)
@@ -102,7 +102,7 @@ template <typename Val> struct KVServerMatrixHandle {
         CHECK_EQ(len, store[k].size()) << " size mismatch in DensePush";
       } else {
         store[k].assign(len, 0);
-        LG << "Key does not exist on PS in DensePush: " << k;
+        LG << "[WARN] Key does not exist on PS in DensePush: " << k;
       }
       res.vals.resize(len);
       auto &value_set = store[k];
@@ -121,10 +121,10 @@ template <typename Val> struct KVServerMatrixHandle {
       if (store.find(k) != store.end()) {
         CHECK_EQ(len, store[k].size()) << " size mismatch in InitAllZeros";
         store[k].assign(len, 0);
-        LG << "init existed PSVector with key: " << k << ", length: " << len;
+        // LG << "init existed PSVector with key: " << k << ", length: " << len;
       } else {
         store[k].assign(len, 0);
-        LG << "init PSVector with key: " << k << " , length: " << len;
+        // LG << "init PSVector with key: " << k << " , length: " << len;
       }
       break;
     }

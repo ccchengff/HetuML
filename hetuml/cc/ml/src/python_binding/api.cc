@@ -11,6 +11,17 @@
 #include "model/mf/mf.h"
 #include "model/lda/lda.h"
 
+#ifdef WITH_PARALLEL
+#include "model/linear/parallel_linear.h"
+#include "model/fm/parallel_fm.h"
+#include "model/naive_bayes/parallel_naive_bayes.h"
+#include "model/gbdt/parallel_gbdt.h"
+#include "model/rf/parallel_rf.h"
+#include "model/mf/parallel_mf.h"
+#include "model/lda/parallel_lda.h"
+#include "ps/psf/PSFHandle.h"
+#endif
+
 using namespace hetu::ml;
 using namespace hetu::ml::linear;
 using namespace hetu::ml::fm;
@@ -38,19 +49,24 @@ typedef float value_t;
   DISPATCH_HETU_ML_MODEL(__MODEL__, __NAME__, module)                   \
     .def("Fit0", [](__MODEL__& self,                                    \
                     const std::string& train_path,                      \
-                    const std::string& valid_path) {                    \
+                    const std::string& valid_path,                      \
+                    const std::string& data_type,                       \
+                    size_t rank, size_t num_workers) {                  \
       auto* train_data = Dataset<label_t, value_t>::LoadData(           \
-        train_path, "libsvm", self.use_neg_y());                        \
+        train_path, data_type, self.use_neg_y());                       \
       if (valid_path.empty()) {                                         \
         self.Fit(*train_data);                                          \
       } else {                                                          \
         auto* valid_data = Dataset<label_t, value_t>::LoadData(         \
-          valid_path, "libsvm", self.use_neg_y());                      \
+          valid_path, data_type, self.use_neg_y());                     \
         self.Fit(*train_data, *valid_data);                             \
         delete valid_data;                                              \
       }                                                                 \
       delete train_data;                                                \
-    }, py::arg("train_path"), py::arg("valid_path") = py::str())        \
+    }, py::arg("train_path"), py::arg("valid_path") = py::str(),        \
+       py::arg("data_type") = py::str("libsvm"),                        \
+       py::arg("rank") = 0,                                    \
+       py::arg("num_workers") = 1)                             \
     .def("Fit1", [](__MODEL__& self,                                    \
                     const DatasetWrapper<value_t>& train_data) {        \
       ASSERT(train_data.dataset != nullptr) << "Train data is empty";   \
@@ -148,7 +164,13 @@ typedef float value_t;
     .def("Fit0", [](__MODEL__& self,                                    \
                     const std::string& train_path,                      \
                     const std::string& valid_path) {                    \
-      self.Fit(train_path, valid_path);                                 \
+      COOMatrixWrapper<value_t> train_data(train_path);                 \
+      if (valid_path.length() > 0) {                                    \
+        COOMatrixWrapper<value_t> valid_data(valid_path);               \
+        self.Fit(train_data.matrix.get(), valid_data.matrix.get());     \
+      } else {                                                          \
+        self.Fit(train_data.matrix.get());                              \
+      }                                                                 \
     }, py::arg("train_path"), py::arg("valid_path") = py::str())        \
     .def("Fit1", [](__MODEL__& self,                                    \
                     const COOMatrixWrapper<value_t>& train_data) {      \
@@ -202,6 +224,32 @@ typedef float value_t;
       return ret;                                                       \
     }, py::arg("pred_data"))
 
+#ifdef WITH_PARALLEL
+template <typename HetuMLPyPsDataType>
+void StartServer() {
+  ASSERT(ps::IsServer()) 
+    << "Only server role can start parameter servers";
+  auto server = new KVServer<HetuMLPyPsDataType>(0);
+  server->set_request_handle(KVServerMatrixHandle<HetuMLPyPsDataType>());
+  RegisterExitCallback([server]() { delete server; });
+}
+
+#define DISPATCH_HETU_PS(module) \
+  module \
+    .def("InitPS", []() { ps::Start(0); })               \
+    .def("FinalizePS", []() { ps::Finalize(0, true); })  \
+    .def("NumWorkers", &ps::NumWorkers)                  \
+    .def("NumServers", &ps::NumServers)                  \
+    .def("IsWorker", &ps::IsWorker)                      \
+    .def("IsServer", &ps::IsServer)                      \
+    .def("IsScheduler", &ps::IsScheduler)                \
+    .def("MyRank", &ps::MyRank)                          \
+    .def("StartIntServer", &StartServer<int>)            \
+    .def("StartFloatServer", &StartServer<float>)        \
+    .def("StartDoubleServer", &StartServer<double>)      \
+    .def("_with_parallel", []() { return true; })
+#endif
+
 
 PYBIND11_MODULE(hetuml_core, m) {
   /* data */
@@ -246,4 +294,20 @@ PYBIND11_MODULE(hetuml_core, m) {
   DISPATCH_HETU_MF_MODEL(MF, "MF", m);
   /* LDA */
   DISPATCH_HETU_LDA_MODEL(LDA, "LDA", m);
+
+#ifdef WITH_PARALLEL
+  DISPATCH_HETU_PS(m);
+  /* parallel supervised ML algorithms */
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelLogReg<value_t>, "ParallelLR", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelSVM<value_t>, "ParallelSVM", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelLinearReg<value_t>, "ParallelLinearReg", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelFM<value_t>, "ParallelFM", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelNaiveBayes<value_t>, "ParallelNaiveBayes", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelGBDT<value_t>, "ParallelGBDT", m);
+  DISPATCH_HETU_SUPERVISED_ML_MODEL(ParallelRF<value_t>, "ParallelRF", m);
+  /* parallel MF */
+  DISPATCH_HETU_MF_MODEL(ParallelMF, "ParallelMF", m);
+  /* parallel LDA */
+  DISPATCH_HETU_LDA_MODEL(ParallelLDA, "ParallelLDA", m);
+#endif
 }

@@ -4,6 +4,7 @@ from hetuml import _C
 from hetuml.model_base import SupervisedMLBase, join_args, args_dict_to_string
 
 class SupportVectorMachine(SupervisedMLBase):
+    ps_data_type = "float"
 
     def __init__(self, 
                  num_epoch: int = 10, 
@@ -13,6 +14,7 @@ class SupportVectorMachine(SupervisedMLBase):
                  l2_reg: float = 0.0, 
                  loss: str = "hinge", 
                  metrics: str = "hinge-loss", 
+                 parallel=False, 
                  aux_args=dict()):
         assert num_epoch > 0, "Number of epochs should be positive"
         assert batch_size > 0, "Batch size should be positive"
@@ -29,6 +31,10 @@ class SupportVectorMachine(SupervisedMLBase):
             l1_reg=l1_reg, 
             l2_reg=l2_reg, 
             loss=loss, 
-            metrics=metrics)
-        handle = _C.SVM(args_dict_to_string(args))
+            metrics=metrics, 
+            parallel=parallel)
+        if parallel:
+            handle = _C.ParallelSVM(args_dict_to_string(args))
+        else:
+            handle = _C.SVM(args_dict_to_string(args))
         super(SupportVectorMachine, self).__init__(handle, args)

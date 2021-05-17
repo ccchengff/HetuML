@@ -13,6 +13,10 @@ Postoffice::Postoffice() {
   env_ref_ = Environment::_GetSharedRef();
 }
 
+Postoffice* Postoffice::Get() {
+  static Postoffice e; return &e;
+}
+
 void Postoffice::InitEnvironment() {
   const char* val = NULL;
   std::string van_type = GetEnv("DMLC_PS_VAN_TYPE", "zmq");

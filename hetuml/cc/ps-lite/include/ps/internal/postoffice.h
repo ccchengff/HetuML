@@ -21,9 +21,7 @@ class Postoffice {
   /**
    * \brief return the singleton object
    */
-  static Postoffice* Get() {
-    static Postoffice e; return &e;
-  }
+  static Postoffice* Get();
   /** \brief get the van */
   Van* van() { return van_; }
   /**

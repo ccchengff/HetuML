@@ -4,6 +4,7 @@ from hetuml import _C
 from hetuml.model_base import SupervisedMLBase, join_args, args_dict_to_string
 
 class RanomBoostedForest(SupervisedMLBase):
+    ps_data_type = "double"
 
     def __init__(self, 
                  max_depth: int = 4, 
@@ -25,6 +26,7 @@ class RanomBoostedForest(SupervisedMLBase):
                  multi_tree: bool = False, 
                  loss: str = "auto", 
                  metrics: str = "auto", 
+                 parallel=False, 
                  aux_args=dict()):
         assert max_depth > 0, "Maximum tree depth should be positive"
         if max_node_num == -1:
@@ -73,6 +75,10 @@ class RanomBoostedForest(SupervisedMLBase):
             max_leaf_weight=max_leaf_weight, 
             multi_tree=multi_tree, 
             loss=loss, 
-            metrics=metrics)
-        handle = _C.RF(args_dict_to_string(args))
+            metrics=metrics, 
+            parallel=parallel)
+        if parallel:
+            handle = _C.ParallelRF(args_dict_to_string(args))
+        else:
+            handle = _C.RF(args_dict_to_string(args))
         super(RanomBoostedForest, self).__init__(handle, args)

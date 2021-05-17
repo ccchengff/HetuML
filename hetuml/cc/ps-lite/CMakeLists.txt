@@ -24,10 +24,10 @@ if(NOT ZMQ_FOUND)
     endif()
     add_subdirectory(${zmq_SOURCE_DIR} ${zmq_BINARY_DIR})
   endif()
-  target_link_libraries(ps PUBLIC libzmq-static)
+  target_link_libraries(ps PRIVATE libzmq-static)
 else()
   target_include_directories(ps PRIVATE ${ZMQ_INCLUDE_DIRS})
-  target_link_libraries(ps PUBLIC ${ZMQ_LIBRARIES})
+  target_link_libraries(ps PRIVATE ${ZMQ_LIBRARIES})
 endif()
 
 # find protobuf

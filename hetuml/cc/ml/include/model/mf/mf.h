@@ -107,19 +107,6 @@ public:
     }
   }
 
-  inline void Fit(const std::string& train_path, 
-                  const std::string& valid_path = "") {
-    mf_problem tr = read_problem(train_path);
-    if (valid_path.length() > 0) {
-      mf_problem va = read_problem(valid_path);
-      this->Fit(&tr, &va);
-      delete[]va.R;
-    } else {
-      this->Fit(&tr);
-    }
-    delete[]tr.R;
-  }
-
   virtual inline void Fit(mf_problem const* train_data, 
                           mf_problem const* valid_data = nullptr) {
     TIK(fit);
