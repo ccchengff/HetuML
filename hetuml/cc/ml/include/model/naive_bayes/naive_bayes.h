@@ -2,6 +2,7 @@
 #define __HETU_ML_MODEL_NAIVE_BAYES_NAIVE_BAYES_H_
 
 #include "model/common/mlbase.h"
+#include "common/threading.h"
 
 namespace hetu { 
 namespace ml {
@@ -111,11 +112,12 @@ public:
                       size_t start_id, size_t end_id) override {
     ASSERT(!this->is_empty()) << "Model is empty";
     ASSERT(!features.is_dense()) 
-      << "Currently we only support sparse features for Linear models";
+      << "Currently we only support sparse features for NaiveBayes models";
     
     auto max_dim = this->get_max_dim();
     auto num_label = this->params->num_label;
     ret.resize((end_id - start_id) * num_label);
+    #pragma omp parallel for schedule(dynamic)
     for (size_t ins_id = start_id; ins_id < end_id; ins_id++) {
       label_t* prob = ret.data() + (ins_id - start_id) * num_label;
       std::fill(prob, prob + num_label, (Val) 1);
@@ -178,9 +180,9 @@ public:
 protected:
   virtual void InitModel(size_t max_dim) {
     auto num_label = this->params->num_label;
-    contigent_probability.resize(num_label, (Val) 0);
-    mean_vec.resize(max_dim * num_label, (Val) 0);
-    var_vec.resize(max_dim * num_label, (Val) 0);
+    contigent_probability.resize(num_label, 0);
+    mean_vec.resize(max_dim * num_label, 0);
+    var_vec.resize(max_dim * num_label, 0);
   }
 
   inline void SummarizeDataset(const Dataset<label_t, Val>& dataset) {
@@ -188,22 +190,42 @@ protected:
     auto num_label = this->params->num_label;
     auto num_ins = dataset.get_num_instances();
 
+    // use double to maintain precision
+    std::vector<double> contigent_probability_buffer(num_label, 0);
+    std::vector<double> mean_vec_buffer(max_dim * num_label, 0);
+    std::vector<double> var_vec_buffer(max_dim * num_label, 0);
+
+    #pragma omp parallel for schedule(dynamic) \
+      reduction(vec_double_plus:contigent_probability_buffer, \
+        mean_vec_buffer, var_vec_buffer)
     for (size_t ins_id = 0; ins_id < num_ins; ins_id++) {
       const auto label = static_cast<int>(dataset.get_label(ins_id));
       const auto& feature = dataset.get_sparse_feature(ins_id);
-      this->contigent_probability[label]++;
+      ASSERT(label >= 0 && label < num_label) 
+        << "Invalid label: " << label 
+        << ", expected in [0, " << num_label << ")";
+      contigent_probability_buffer[label]++;
       for (size_t i = 0; i < feature.nnz; i++) {
         auto indices = feature.indices[i];
         auto value = feature.values[i];
-        this->mean_vec[indices * num_label + label] += value;
-        this->var_vec[indices * num_label + label] += SQUARE(value);
+        mean_vec_buffer[indices * num_label + label] += value;
+        var_vec_buffer[indices * num_label + label] += SQUARE(value);
       }
+    }
+
+    for (size_t i = 0; i < num_label; i++) {
+      this->contigent_probability[i] += contigent_probability_buffer[i];
+    }
+    for (size_t i = 0; i < max_dim * num_label; i++) {
+      this->mean_vec[i] += mean_vec_buffer[i];
+      this->var_vec[i] += var_vec_buffer[i];
     }
   }
 
   inline virtual void ComputeStaticstics() {
     auto max_dim = this->get_max_dim();
     auto num_label = this->params->num_label;
+    #pragma omp parallel for
     for (size_t dim = 0; dim < max_dim; dim++) {
       for (size_t k = 0; k < num_label; k++) {
         auto index = dim * num_label + k;
@@ -216,6 +238,7 @@ protected:
     }
     Val num_ins = std::accumulate(this->contigent_probability.begin(), 
       this->contigent_probability.end(), (Val) 0);
+    #pragma omp parallel for
     for (size_t k = 0; k < num_label; k++) {
       this->contigent_probability[k] /= num_ins;
     }

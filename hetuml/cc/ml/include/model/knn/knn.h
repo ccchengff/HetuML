@@ -2,6 +2,7 @@
 #define __HETU_ML_MODEL_KNN_KNN_H_
 
 #include "model/common/mlbase.h"
+#include "common/threading.h"
 #include <queue>
 
 namespace hetu { 
@@ -90,7 +91,9 @@ public:
     HML_LOG_INFO << "Start prediction of " << this->name() << " model"
       << " with hyper-parameters:\n" << *this->params;
     ret.resize(num_unlabeled * num_label);
+    #pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < num_unlabeled; i++) {
+      label_t* prob = ret.data() + i * num_label;
       const auto& unlabeled_ins = unlabeled_data.get_sparse_feature(i);
       // compute distance and get nearest neighbors
       std::priority_queue<std::tuple<Val, size_t>> neighbors;
@@ -102,14 +105,14 @@ public:
           neighbors.pop();
       }
       // voting
-      size_t offset = i * num_label;
       while (!neighbors.empty()) {
         auto& temp = neighbors.top();
         neighbors.pop();
         auto label = static_cast<size_t>(labeled_data.get_label(
           std::get<1>(temp)));
-        ret[offset + label] += 1.0 / num_label;
+        prob[label] += 1.0 / num_label;
       }
+      Softmax<label_t, label_t>(prob, num_label, prob);
     }
     TOK(predict);
     HML_LOG_INFO << "Prediction of " << this->name() << " model"
