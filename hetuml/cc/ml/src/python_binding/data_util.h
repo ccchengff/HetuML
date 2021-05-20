@@ -11,11 +11,6 @@
 namespace py = pybind11;
 using namespace hetu::ml;
 
-template <typename V>
-class DataMatrixWrapper;
-template <typename V>
-class DatasetWrapper;
-
 template <typename IN, typename OUT>
 inline py::array_t<OUT> ToPyArray(std::vector<IN>& vec) {
   auto result = py::array_t<OUT>(vec.size());
