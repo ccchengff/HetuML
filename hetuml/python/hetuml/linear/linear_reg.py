@@ -21,7 +21,7 @@ class LinearRegression(SupervisedMLBase):
         assert learning_rate > 0, "Learning rate should be positive"
         assert l1_reg >= 0, "L1 regularization term should be non-negative"
         assert l2_reg >= 0, "L2 regularization term should be non-negative"
-        assert loss in ("rmse",), "Loss {} is not allowed for {}".format(loss, type(self))
+        assert loss in ("square",), "Loss {} is not allowed for {}".format(loss, type(self))
         args = join_args(
             aux_args=aux_args, 
             is_regression=True, 

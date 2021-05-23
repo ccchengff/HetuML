@@ -5,7 +5,7 @@ namespace ml {
 namespace gbdt {
 
 GBDTModel* GBDTTrainer::FitModel() {
-  HML_LOG_INFO << "Start to train a GBDT model";
+  HML_LOG_INFO << "Start to fit model...";
   GBDTModel* model = new GBDTModel(this->param);
   TIK(train);
 
@@ -126,7 +126,7 @@ GBDTModel* GBDTTrainer::FitModel() {
   }
 
   TOK(train);
-  HML_LOG_INFO << "Train GBDT model with " << model->num_trees() << " tree(s)"
+  HML_LOG_INFO << "Fit model with " << model->num_trees() << " tree(s)"
     << " cost " << COST_MSEC(train) << " ms";
   return model;
 }
