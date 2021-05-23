@@ -107,7 +107,8 @@ ParsePyCOOMatrix(py::array_t<int> rows,
   std::vector<int> rows_vec(rows_ptr, rows_ptr + num_nnz);
   std::vector<int> cols_vec(cols_ptr, cols_ptr + num_nnz);
   std::vector<float> values_vec(values_ptr, values_ptr + num_nnz);
-  return { rows_vec, cols_vec, values_vec };
+  return std::tuple<std::vector<int>, std::vector<int>, std::vector<OUT>>(
+    rows_vec, cols_vec, values_vec);
 }
 
 template <typename IN, typename OUT>
