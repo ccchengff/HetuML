@@ -119,6 +119,17 @@ protected:
       num_hist_bin * (m1_size + m2_size), max_inner_num));
     this->ps_splits.reset(new PSMatrix<PsDataType>("splits", 
       3 + (m1_size + m2_size) * 2, max_inner_num));
+    PSVector<PsDataType> ps_seed("seed", 1);
+    if (this->rank == 0) {
+      ps_seed.initAllZeros();
+      this->feat_seed = \
+        std::chrono::system_clock::now().time_since_epoch().count();
+      ps_seed.densePush(reinterpret_cast<PsDataType*>(&this->feat_seed), 1);
+      GlobalSync();
+    } else {
+      GlobalSync();
+      ps_seed.densePull(reinterpret_cast<PsDataType*>(&this->feat_seed), 1);
+    }
   }
 
   /* -------------------- Training APIs -------------------- */
@@ -321,7 +332,7 @@ private:
   PsVectorPtr ps_root_gp;
   PsMatrixPtr ps_hist;
   PsMatrixPtr ps_splits;
-  int xxx = 0;
+  uint64_t feat_seed;
 };
 
 void GBDTDPTrainer::DoInitPreds(std::vector<float>& init_preds) {
@@ -410,7 +421,11 @@ GBDTDPTrainer::DoNewTree(int class_id, uint64_t ins_sp_seed,
   std::vector<PsDataType> root_gp_vec;
   root_gp->get(root_gp_vec);
   this->ps_root_gp->densePush(root_gp_vec.data(), root_gp_vec.size());
-  // feature sampling, TODO: sync feat_sp_seed among workers
+  // feature sampling
+  if (feat_sp_seed == 0) {
+    feat_sp_seed = this->feat_seed;
+    this->feat_seed++;
+  }
   if (tree_sampler->FeatSampling(*feat_info, feat_sp_seed) 
       || ins_info->m2_size != param->m2_size()) {
     hist_manager->Reset();
@@ -423,12 +438,12 @@ GBDTDPTrainer::DoNewTree(int class_id, uint64_t ins_sp_seed,
   GradPairPtr global_root_gp(root_gp->zeros_like());
   this->ps_root_gp->densePull(root_gp_vec.data(), root_gp_vec.size());
   global_root_gp->set(root_gp_vec);
-  // HML_LOG_INFO << "Rank[" << this->rank << "] Root size: " 
-  //   << "local[" << node_indexer->get_node_size(0) << "] "
-  //   << "global[" << global_root_size << "]";
-  // HML_LOG_INFO << "Rank[" << this->rank << "] Root grad pair: " 
-  //   << "local[" << node_indexer->get_node_gp(0) << "] "
-  //   << "global[" << *global_root_gp << "]";
+  HML_LOG_DEBUG << "Rank[" << this->rank << "] Root size: " 
+    << "local[" << node_indexer->get_node_size(0) << "] "
+    << "global[" << global_root_size << "]";
+  HML_LOG_DEBUG << "Rank[" << this->rank << "] Root grad pair: " 
+    << "local[" << node_indexer->get_node_gp(0) << "] "
+    << "global[" << *global_root_gp << "]";
 
   return std::tuple<uint32_t, GradPairPtr>(
     global_root_size, global_root_gp);
@@ -537,10 +552,10 @@ std::map<uint32_t, uint32_t> GBDTDPTrainer::DoSplitNodes(
   std::map<uint32_t, uint32_t> chilren_sizes_map;
   for (uint32_t i = 0; i < children_nids.size(); i++) {
     chilren_sizes_map[children_nids[i]] = chilren_sizes[i];
-    // HML_LOG_DEBUG << "Rank[" << this->rank << "] " 
-    //   << "Size of node[" << children_nids[i] << "]: " 
-    //   << "local[" << node_indexer->get_node_size(children_nids[i]) << "], "
-    //   << "global[" << chilren_sizes[i] << "]";
+    HML_LOG_TRACE << "Rank[" << this->rank << "] " 
+      << "Size of node[" << children_nids[i] << "]: " 
+      << "local[" << node_indexer->get_node_size(children_nids[i]) << "], "
+      << "global[" << chilren_sizes[i] << "]";
   }
   TOK(sum_size);
   HML_LOG_DEBUG << "Rank[" << this->rank << "] Sum sizes of children nodes"
@@ -557,9 +572,9 @@ GBTSplitPtrMapPtr GBDTDPTrainer::MergeNodeHistsAndFindSplits
   TIK(push_hist);
   PushNodeHists(nids);
   TOK(push_hist);
-  // HML_LOG_DEBUG << "Rank[" << this->rank << "] " 
-  //   << "Push histograms of nodes " << nids 
-  //   << " cost " << COST_MSEC(push_hist) << " ms";
+  HML_LOG_TRACE << "Rank[" << this->rank << "] " 
+    << "Push histograms of nodes " << nids 
+    << " cost " << COST_MSEC(push_hist) << " ms";
   GlobalSync();
 
   // pull node hist & find split with load balancing
@@ -578,9 +593,9 @@ GBTSplitPtrMapPtr GBDTDPTrainer::MergeNodeHistsAndFindSplits
     auto sharded_splits = PullNodeHistsAndFindSplits(
       sharded_nids, sharded_node_sum_gps, sharded_node_gains);
     TOK(find_splits);
-    // HML_LOG_DEBUG << "Rank[" << this->rank << "] " 
-    //   << "Pull histograms and find splits of nodes " << sharded_nids 
-    //   << " cost " << COST_MSEC(push_hist) << " ms";
+    HML_LOG_TRACE << "Rank[" << this->rank << "] " 
+      << "Pull histograms and find splits of nodes " << sharded_nids 
+      << " cost " << COST_MSEC(push_hist) << " ms";
 
     // push splits that the worker found
     TIK(push_splits);

@@ -176,6 +176,16 @@ protected:
   DoEvaluate(int round_id);
 };
 
+static inline void CheckLabels(const std::vector<label_t>& labels, 
+                               int num_classes) {
+  for (auto label : labels) {
+    int label_int = static_cast<int>(label);
+    ASSERT(label_int >= 0 && label_int < num_classes) 
+      << "Invalid label: " << label_int 
+      << ", should be in [0, " << num_classes - 1 << "]";
+  }
+}
+
 static inline void CheckAndCountLabels(const std::vector<label_t>& labels, 
                                        std::vector<uint32_t>& cnts, 
                                        int num_classes) {

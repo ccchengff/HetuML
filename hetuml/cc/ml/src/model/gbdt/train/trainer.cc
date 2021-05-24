@@ -22,11 +22,16 @@ GBDTModel* GBDTTrainer::FitModel() {
   to_set_leaves.reserve(max_node_num);
 
   // initialize predictions
-  if (!this->param->is_majority_voting)
+  if (!this->param->is_majority_voting) {
     InitPreds(*model);
+  } else if (!this->param->is_regression) {
+    CheckLabels(train_data->get_labels(), param->num_label);
+    if (num_valid > 0) 
+      CheckLabels(valid_data->get_labels(), param->num_label);
+  }
 
   for (int round_id = 0; round_id < param->num_round; round_id++) {
-    // DT_LOG_INFO("Start to train round[" << round_id + 1 << "]");
+    HML_LOG_DEBUG << "Start to train round[" << round_id + 1 << "]";
     TIK(cur_round);
 
     // calc grad pairs for current round 
@@ -387,6 +392,8 @@ void GBDTTrainer::DoInitPreds(std::vector<float>& init_preds) {
 
   std::vector<uint32_t> cnts;
   CheckAndCountLabels(train_data->get_labels(), cnts, param->num_label);
+  if (num_valid > 0)
+    CheckLabels(valid_data->get_labels(), param->num_label);
   const uint32_t num_ins = train_data->get_num_instances();
   double avg = 1.0 / param->num_label;
   if (param->num_label == 2) {

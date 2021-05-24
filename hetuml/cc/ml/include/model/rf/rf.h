@@ -26,10 +26,6 @@ namespace RFConf {
     gbdt::GBDTConf::IS_MAJORITY_VOTING;
   static const bool DEFAULT_IS_MAJORITY_VOTING = true;
 
-  // static std::vector<std::string> meaningful_keys() {
-  //   return gbdt::GBDTConf::meaningful_keys();
-  // }
-
   static Args default_args() {
     Args args = gbdt::GBDTConf::default_args();
     args[INS_SP_RATIO] = std::to_string(DEFAULT_INS_SP_RATIO);
@@ -45,14 +41,14 @@ namespace RFConf {
       res[INS_SP_RATIO] = std::to_string(DEFAULT_INS_SP_RATIO);
     } else {
       float ins_sp_ratio = argparse::Get<float>(res, INS_SP_RATIO);
-      ASSERT_LT(ins_sp_ratio, 1) 
+      ASSERT(ins_sp_ratio > 0 && ins_sp_ratio <= 1) 
         << "Invalid instance sampling ratio for RF: " << ins_sp_ratio;
     }
     if (res.find(FEAT_SP_RATIO) == res.end()) {
       res[FEAT_SP_RATIO] = std::to_string(DEFAULT_FEAT_SP_RATIO);
     } else {
       float feat_sp_ratio = argparse::Get<float>(res, FEAT_SP_RATIO);
-      ASSERT_LT(feat_sp_ratio, 1) 
+      ASSERT(feat_sp_ratio > 0 && feat_sp_ratio <= 1) 
         << "Invalid feature sampling ratio for RF: " << feat_sp_ratio;
     }
     if (res.find(NUM_ROUND) == res.end()) {
