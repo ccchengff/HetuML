@@ -87,6 +87,8 @@ public:
       << "Only " << num_labeled << " labeled instances are provided, " 
       << "which is not greater than number of neighbors " << num_neighbor;
 
+    labeled_data.CheckLabels(this->params->num_label);
+
     TIK(predict);
     HML_LOG_INFO << "Start prediction of " << this->name() << " model"
       << " with hyper-parameters:\n" << *this->params;

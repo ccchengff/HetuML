@@ -75,6 +75,9 @@ public:
       << "Currently we only support sparse features for Linear models";
     ASSERT(!valid_data.is_dense() || valid_data.get_num_instances() == 0)
       << "Currently we only support sparse features for Linear models";
+    train_data.CheckLabels(this->params->num_label);
+    valid_data.CheckLabels(this->params->num_label);
+    
     this->InitModel(train_data.get_max_dim());
 
     TIK(fit);
@@ -202,9 +205,6 @@ protected:
     for (size_t ins_id = 0; ins_id < num_ins; ins_id++) {
       const auto label = static_cast<int>(dataset.get_label(ins_id));
       const auto& feature = dataset.get_sparse_feature(ins_id);
-      ASSERT(label >= 0 && label < num_label) 
-        << "Invalid label: " << label 
-        << ", expected in [0, " << num_label << ")";
       contigent_probability_buffer[label]++;
       for (size_t i = 0; i < feature.nnz; i++) {
         auto indices = feature.indices[i];

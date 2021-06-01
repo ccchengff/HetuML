@@ -30,6 +30,37 @@ public:
 
   inline uint32_t get_num_instances() const { return labels.size(); }
 
+  inline void CheckBinaryLabels(bool neg_y) {
+    if (neg_y) {
+      for (auto label : this->labels) {
+        ASSERT(label == 1 || label == -1) 
+          << "Invalid label: " << label << ", should be -1 or +1";
+      }
+    } else {
+      for (auto label : labels) {
+        ASSERT(label == 1 || label == 0) 
+          << "Invalid label: " << label << ", should be 0 or 1";
+      }
+    }
+  }
+
+  inline void CheckLabels(int num_classes) {
+    for (auto label : this->labels) {
+      int label_int = static_cast<int>(label);
+      ASSERT(label_int >= 0 && label_int < num_classes) 
+        << "Invalid label: " << label_int 
+        << ", should be in [0, " << num_classes - 1 << "]";
+    }
+  }
+
+  inline void CountLabels(std::vector<uint32_t>& cnts, int num_classes) {
+    cnts.resize(num_classes);
+    for (auto label : this->labels) {
+      int label_int = static_cast<int>(label);
+      cnts[label_int]++;
+    }
+  }
+
 protected:
   std::vector<L> labels;
 };
@@ -79,10 +110,6 @@ public:
   inline uint32_t get_max_dim() const { return max_dim; }
 
   inline bool is_dense() const { return this->dense; }
-
-  // static DataMatrix<V>* 
-  // LoadData(const std::string& path, const std::string& data_format, 
-  //          size_t rank = 0, size_t num_workers = 1);
 
 protected:
   std::vector<AVector<V>*> features;

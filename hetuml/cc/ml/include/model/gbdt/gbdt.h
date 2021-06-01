@@ -18,6 +18,9 @@ public:
 
   inline void Fit(const Dataset<label_t, Val>& train_data, 
                   const Dataset<label_t, Val>& valid_data = {}) override {
+    train_data.CheckLabels(this->params->num_label);
+    valid_data.CheckLabels(this->params->num_label);
+    
     TIK(fit);
     HML_LOG_INFO << "Start to fit " << this->name() << " model"
       << " with hyper-parameters:\n" << *this->params;

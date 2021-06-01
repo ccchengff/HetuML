@@ -24,10 +24,6 @@ GBDTModel* GBDTTrainer::FitModel() {
   // initialize predictions
   if (!this->param->is_majority_voting) {
     InitPreds(*model);
-  } else if (!this->param->is_regression) {
-    CheckLabels(train_data->get_labels(), param->num_label);
-    if (num_valid > 0) 
-      CheckLabels(valid_data->get_labels(), param->num_label);
   }
 
   for (int round_id = 0; round_id < param->num_round; round_id++) {
@@ -391,9 +387,7 @@ void GBDTTrainer::DoInitPreds(std::vector<float>& init_preds) {
     return;
 
   std::vector<uint32_t> cnts;
-  CheckAndCountLabels(train_data->get_labels(), cnts, param->num_label);
-  if (num_valid > 0)
-    CheckLabels(valid_data->get_labels(), param->num_label);
+  train_data->CountLabels(cnts, param->num_label);
   const uint32_t num_ins = train_data->get_num_instances();
   double avg = 1.0 / param->num_label;
   if (param->num_label == 2) {

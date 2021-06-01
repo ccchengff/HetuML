@@ -70,6 +70,9 @@ public:
       << "Currently we only support sparse features for FM models";
     ASSERT(!valid_data.is_dense() || valid_data.get_num_instances() == 0)
       << "Currently we only support sparse features for FM models";
+    train_data.CheckBinaryLabels(true);
+    valid_data.CheckBinaryLabels(true);
+    
     this->InitModel(train_data.get_max_dim());
 
     TIK(fit);

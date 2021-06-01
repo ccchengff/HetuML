@@ -126,6 +126,11 @@ public:
       << "Currently we only support sparse features for Linear models";
     ASSERT(!valid_data.is_dense() || valid_data.get_num_instances() == 0)
       << "Currently we only support sparse features for Linear models";
+    if (this->use_neg_y()) { // LogReg or SVM
+      train_data.CheckBinaryLabels(this->use_neg_y());
+      valid_data.CheckBinaryLabels(this->use_neg_y());
+    }
+    
     this->InitModel(train_data.get_max_dim());
 
     TIK(fit);
