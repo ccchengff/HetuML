@@ -348,7 +348,7 @@ void GBDTDPTrainer::DoInitPreds(std::vector<float>& init_preds) {
 
   // count and summarize label occurences
   std::vector<uint32_t> cnts;
-  CheckAndCountLabels(train_data->get_labels(), cnts, param->num_label);
+  train_data->CountLabels(cnts, param->num_label);
   std::vector<PsDataType> sum_cnts(cnts.begin(), cnts.end());
   ps_labels_cnts->densePush(sum_cnts.data(), param->num_label);
   GlobalSync();
