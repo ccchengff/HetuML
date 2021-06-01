@@ -128,10 +128,10 @@ public:
     this->PrepareForFit(corpus);
     for (int iter_id = 0; iter_id < this->params->num_iters; iter_id++) {
       TIK(iter);
-      float llh = this->SampleOneIteration(corpus, true);
+      auto llh = this->SampleOneIteration(corpus, true);
       TOK(iter);
       HML_LOG_INFO << "Iteration[" << iter_id + 1 << "] loglikelihood[" 
-        << llh << "] cost " << COST_MSEC(iter) << " ms";
+        << std::fixed << llh << "] cost " << COST_MSEC(iter) << " ms";
     }
     TOK(fit);
     HML_LOG_INFO << "Fit " << this->name() << " model"
@@ -143,10 +143,10 @@ public:
     this->PrepareForPredict(corpus);
     for (int iter_id = 0; iter_id < this->params->num_iters; iter_id++) {
       TIK(iter);
-      float llh = this->SampleOneIteration(corpus, false);
+      auto llh = this->SampleOneIteration(corpus, false);
       TOK(iter);
       HML_LOG_INFO << "Iteration[" << iter_id + 1 << "] loglikelihood[" 
-        << llh << "] cost " << COST_MSEC(iter) << " ms";
+        << std::fixed << llh << "] cost " << COST_MSEC(iter) << " ms";
     }
     std::vector<int> ret(corpus.n_tokens);
     for (int i = 0; i < corpus.n_tokens; i++)
@@ -193,7 +193,7 @@ protected:
 
   virtual void PrepareForPredict(const Corpus& corpus);
 
-  virtual float SampleOneIteration(const Corpus& corpus, bool update);
+  virtual double SampleOneIteration(const Corpus& corpus, bool update);
 
   // deal with short docs using F+ tree.
   // iterate over words in short docs.
@@ -206,7 +206,7 @@ protected:
   // deal with long docs
   void VisitByWord(const Corpus& corpus, bool update);
 
-  float Loglikelihood(const Corpus& corpus);
+  double Loglikelihood(const Corpus& corpus);
 
   inline float CalWordTopic(int word_count, int topic, 
                             int n_words, float beta) const {

@@ -33,7 +33,7 @@ void ParallelLDA::PrepareForFit(const Corpus &corpus) {
   PSAgent<int>::Get()->barrier();
 }
 
-float ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
+double ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
   int n_topics = this->params->num_topics;
   int n_words = this->params->num_words;
 
@@ -51,7 +51,7 @@ float ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
   }
 
   // fit one iteration on local data shard
-  float llh = LDA::SampleOneIteration(corpus, update);
+  auto llh = LDA::SampleOneIteration(corpus, update);
 
   // push topic_dist and word_topic_dist to PS
   if (update) {

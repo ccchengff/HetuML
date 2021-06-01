@@ -129,6 +129,7 @@ public:
           for (size_t k = 0; k < num_label; k++) {
             auto mean = this->mean_vec[indices * num_label + k];
             auto var = this->var_vec[indices * num_label + k];
+            if (var < EPSILON) continue;
             auto pred = this->Normal(value, mean, var);
             prob[k] *= MAX(pred, EPSILON);
           }

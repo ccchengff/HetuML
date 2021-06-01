@@ -25,7 +25,7 @@ class Cluster(object):
         
         self._setup_env()
         _C.InitPS()
-        if self.role == "scheduler":
+        if self.role != "scheduler":
             self.rank = _C.MyRank()
         else:
             self.rank = 0

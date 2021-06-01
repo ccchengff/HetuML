@@ -81,7 +81,7 @@ void LDA::PrepareForPredict(const Corpus &corpus) {
   }
 }
 
-float LDA::SampleOneIteration(const Corpus& corpus, bool update) {
+double LDA::SampleOneIteration(const Corpus& corpus, bool update) {
   // long docs by MH, WARPLDA
   this->VisitByDoc(corpus, update);
   this->VisitByWord(corpus, update);
@@ -90,7 +90,7 @@ float LDA::SampleOneIteration(const Corpus& corpus, bool update) {
   this->FTreeIteration(corpus, update);
   
   // calculate likelihood
-  float llh = this->Loglikelihood(corpus);
+  auto llh = this->Loglikelihood(corpus);
   
   return llh;
 }
@@ -295,11 +295,11 @@ void LDA::VisitByDoc(const Corpus &corpus, bool update) {
   }
 }
 
-float LDA::Loglikelihood(const Corpus &corpus) {
+double LDA::Loglikelihood(const Corpus &corpus) {
   int n_topics = this->params->num_topics;
   float alpha = this->params->alpha;
   float beta = this->params->beta;
-  float llh = 0;
+  double llh = 0;
   std::vector<int> doc_dist;
 
   llh += corpus.n_docs * (lgamma(n_topics * alpha) - n_topics * lgamma(alpha));
