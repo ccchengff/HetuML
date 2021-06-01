@@ -79,7 +79,8 @@ public:
     auto ms = (std::chrono::duration_cast<std::chrono::milliseconds>(
       now.time_since_epoch()) % 1000).count();
     this->_ss << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %X")
-      << ":" << ms << " (" << file << ":" << line << ")] [" << level << "] ";
+      << ":" << ms << " [" << level << "] ";
+      // << ":" << ms << " (" << file << ":" << line << ")] [" << level << "] ";
   }
   ~MsgLogger() { 
     this->_ss << "\n"; 
@@ -119,7 +120,8 @@ public:
     auto ms = (std::chrono::duration_cast<std::chrono::milliseconds>(
       now.time_since_epoch()) % 1000).count();
     this->_ss << "[" << std::put_time(std::localtime(&time), "%Y-%m-%d %X")
-      << ":" << ms << " (" << file << ":" << line << ")] [" << level << "] ";
+      << ":" << ms << " [" << level << "] ";
+      // << ":" << ms << " (" << file << ":" << line << ")] [" << level << "] ";
   }
   ~FatalLogger() noexcept(false) { 
     this->_ss << "\n\n" << StackTrace() << "\n\n"; 
