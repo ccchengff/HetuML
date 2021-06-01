@@ -30,7 +30,7 @@ public:
 
   inline uint32_t get_num_instances() const { return labels.size(); }
 
-  inline void CheckBinaryLabels(bool neg_y) {
+  inline void CheckBinaryLabels(bool neg_y) const {
     if (neg_y) {
       for (auto label : this->labels) {
         ASSERT(label == 1 || label == -1) 
@@ -44,7 +44,7 @@ public:
     }
   }
 
-  inline void CheckLabels(int num_classes) {
+  inline void CheckLabels(int num_classes) const {
     for (auto label : this->labels) {
       int label_int = static_cast<int>(label);
       ASSERT(label_int >= 0 && label_int < num_classes) 
@@ -53,7 +53,8 @@ public:
     }
   }
 
-  inline void CountLabels(std::vector<uint32_t>& cnts, int num_classes) {
+  inline void CountLabels(std::vector<uint32_t>& cnts, 
+                          int num_classes) const {
     cnts.resize(num_classes);
     for (auto label : this->labels) {
       int label_int = static_cast<int>(label);
