@@ -2,7 +2,9 @@
 
 import tensorflow as tf
 from tensorflow.contrib.learn import learn_runner
-from libsvm_dataset import LibSVMDataset
+import numpy as np
+from sklearn.datasets import load_svmlight_file
+from scipy.sparse import csr_matrix
 from utils import parse_config
 
 import os
@@ -20,6 +22,27 @@ def setup_cluster():
         "task": {"type": FLAGS.job_name, "index": FLAGS.task_index}, 
         "environment": "cloud"
         })
+
+
+def load_data(input_path, rank=0, num_workers=1):
+    if input_path.endswith(".npz"):
+        if num_workers > 1:
+            input_path = input_path[:-4] + "_{}_of_{}.npz".format(rank, num_workers)
+        logging.info("Loading from %s..." % input_path)
+        loader = np.load(input_path)
+        X = csr_matrix((loader['data'], loader['indices'], loader['indptr']), 
+                        shape=loader['shape'])
+        y = loader['label']
+    else:
+        logging.info("Loading from %s..." % input_path)
+        X, y = load_svmlight_file(input_path, dtype=np.float32)
+        if num_workers > 1:
+            X = X[rank:][::num_workers]
+            y = y[rank:][::num_workers]
+    dim = X.shape[1]
+    # TensorForest does not support sparse continuous
+    X = X.toarray()
+    return X, y, dim
 
 
 def func(output_dir="models"):
@@ -44,25 +67,13 @@ def func(output_dir="models"):
         logging.info("Server terminating")
     else:
         # load datasets
+        rank = FLAGS.task_index if is_distributed else 0
         num_workers = len(cluster_config["worker"]) if is_distributed else 1
-        train_data = LibSVMDataset(FLAGS.train_path, -1, 
-                                   rank=FLAGS.task_index, 
-                                   num_workers=num_workers)
-        valid_data = LibSVMDataset(FLAGS.valid_path, -1, 
-                                   rank=FLAGS.task_index, 
-                                   num_workers=num_workers)
-        max_dim = max(train_data.max_dim, valid_data.max_dim)
-
-        # TensorForest does not support sparse continuous.
-        def to_array(dataset):
-            X, y = dataset.features, dataset.labels
-            if X.shape[1] != max_dim:
-                X.resize(X.shape[0], max_dim)
-            X = X.toarray()
-            return X, y
-        
-        train_X, train_y = to_array(train_data)
-        valid_X, valid_y = to_array(valid_data)
+        train_X, train_y, train_dim = load_data(
+            FLAGS.train_path, rank=rank, num_workers=num_workers)
+        valid_X, valid_y, valid_dim = load_data(
+            FLAGS.valid_path, rank=rank, num_workers=num_workers)
+        max_dim = max(train_dim, valid_dim)
         logging.info("Data loading done, #train[{}] #valid[{}] #dim[{}]".format(
             train_y.shape[0], valid_y.shape[0], max_dim))
         
@@ -126,8 +137,8 @@ if __name__ == '__main__':
     tf.app.flags.DEFINE_string("train_path", "", "Path to training data")
     tf.app.flags.DEFINE_string("valid_path", "", "Path to validation data")
     tf.app.flags.DEFINE_float("eta", 0.1, "Learning rate")
-    tf.app.flags.DEFINE_integer("num_trees", 10, "Number of trees")
-    tf.app.flags.DEFINE_integer("max_nodes", 31, "Maximum number of nodes for each tree")
+    tf.app.flags.DEFINE_integer("num_trees", 100, "Number of trees")
+    tf.app.flags.DEFINE_integer("max_nodes", 127, "Maximum number of nodes for each tree")
     tf.app.flags.DEFINE_float("ins_sample", 0.3, "Sample ratio for instances")
     tf.app.flags.DEFINE_float("feat_sample", 0.3, "Sample ratio for features")
     FLAGS = tf.app.flags.FLAGS

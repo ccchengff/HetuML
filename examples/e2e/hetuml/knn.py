@@ -3,6 +3,8 @@
 from hetuml.neighbors import KNN
 from hetuml.data import Dataset
 from hetuml.cluster import Cluster
+import numpy as np
+from scipy.sparse import csr_matrix
 
 import os, sys
 import time
@@ -10,6 +12,19 @@ import argparse
 import logging
 logging.basicConfig(format='[%(asctime)s.%(msecs)03d][%(levelname)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
+
+def load_libsvm(input_path):
+    logging.info("Loading data from {}...".format(input_path))
+    if input_path.endswith(".npz"):
+        loader = np.load(input_path)
+        X = csr_matrix((loader['data'], loader['indices'], loader['indptr']), 
+                        shape=loader['shape'])
+        y = loader['label']
+        data = Dataset.from_data((X, y))
+    else:
+        data = Dataset.from_file(input_path, neg_y=False, 
+                                 rank=rank, total_ranks=num_workers)
+    return data
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -22,12 +37,8 @@ if __name__ == "__main__":
     # load data
     assert args.num_labels > 0, "Please provide number of labels"
     rank, num_workers = 0, 1
-    train_data = Dataset.from_file(args.train_path, neg_y=False, 
-                                    rank=rank, 
-                                    total_ranks=num_workers)
-    valid_data = Dataset.from_file(args.valid_path, neg_y=False, 
-                                    rank=rank, 
-                                    total_ranks=num_workers)
+    train_data = load_libsvm(args.train_path)
+    valid_data = load_libsvm(args.valid_path)
     
     model = KNN(
         num_label=args.num_labels, 

@@ -4,9 +4,10 @@ import tensorflow as tf
 from tensorflow.contrib.boosted_trees.estimator_batch.estimator import GradientBoostedDecisionTreeClassifier
 from tensorflow.contrib.boosted_trees.proto import learner_pb2
 from tensorflow.contrib.learn import learn_runner
-from libsvm_dataset import LibSVMDataset
-from utils import parse_config
 import numpy as np
+from sklearn.datasets import load_svmlight_file
+from scipy.sparse import csr_matrix
+from utils import parse_config
 
 import os
 import time
@@ -23,6 +24,30 @@ def setup_cluster():
         "task": {"type": FLAGS.job_name, "index": FLAGS.task_index}, 
         "environment": "cloud"
         })
+
+
+def load_data(input_path, rank=0, num_workers=1):
+    if input_path.endswith(".npz"):
+        if num_workers > 1:
+            input_path = input_path[:-4] + "_{}_of_{}.npz".format(rank, num_workers)
+        logging.info("Loading from %s..." % input_path)
+        loader = np.load(input_path)
+        X = csr_matrix((loader['data'], loader['indices'], loader['indptr']), 
+                        shape=loader['shape'])
+        y = loader['label']
+    else:
+        logging.info("Loading from %s..." % input_path)
+        X, y = load_svmlight_file(input_path, dtype=np.float32)
+        if num_workers > 1:
+            X = X[rank:][::num_workers]
+            y = y[rank:][::num_workers]
+    dim = X.shape[1]
+    # to coo format
+    X = X.tocoo()
+    indices = np.dstack([X.row, X.col])[0]
+    values = X.data
+    X = (indices, values)
+    return X, y, dim
 
 
 def func(output_dir="models"):
@@ -47,24 +72,13 @@ def func(output_dir="models"):
         logging.info("Server terminating")
     else:
         # load datasets
+        rank = FLAGS.task_index if is_distributed else 0
         num_workers = len(cluster_config["worker"]) if is_distributed else 1
-        train_data = LibSVMDataset(FLAGS.train_path, -1, 
-                                   rank=FLAGS.task_index, 
-                                   num_workers=num_workers)
-        valid_data = LibSVMDataset(FLAGS.valid_path, -1, 
-                                   rank=FLAGS.task_index, 
-                                   num_workers=num_workers)
-        max_dim = max(train_data.max_dim, valid_data.max_dim)
-
-        def to_coo(dataset):
-            X, y = dataset.features.tocoo(), dataset.labels
-            indices = np.dstack([X.row, X.col])[0]
-            values = X.data
-            X = (indices, values)
-            return X, y
-        
-        train_X, train_y = to_coo(train_data)
-        valid_X, valid_y = to_coo(valid_data)
+        train_X, train_y, train_dim = load_data(
+            FLAGS.train_path, rank=rank, num_workers=num_workers)
+        valid_X, valid_y, valid_dim = load_data(
+            FLAGS.valid_path, rank=rank, num_workers=num_workers)
+        max_dim = max(train_dim, valid_dim)
         logging.info("Data loading done, #train[{}] #valid[{}] #dim[{}]".format(
             train_y.shape[0], valid_y.shape[0], max_dim))
         

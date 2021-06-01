@@ -20,16 +20,19 @@ if __name__ == "__main__":
     parser.add_argument("--train_path", type=str, default="", help="Path to training data")
     parser.add_argument("--valid_path", type=str, default="", help="Path to validation data")
     parser.add_argument("--embedding_dim", type=int, default=8, help="Size of hidden dimension")
+    parser.add_argument("--num_epoch", type=int, default=10, help="Number of epochs")
     parser.add_argument("--eta", type=float, default=0.1, help="Learning rate")
     
     args = parser.parse_args()
     is_distributed = len(args.scheduler) > 0
     if is_distributed:
+        logging.info("Setting up cluster...")
         cluster = Cluster(
             scheduler=args.scheduler,  
             num_servers=args.num_servers, 
             num_workers=args.num_workers, 
             role=args.role)
+        logging.info("Set up cluster successfully")
     
     if args.role == "server":
         cluster.start_server(NMF.ps_data_type)
@@ -40,7 +43,7 @@ if __name__ == "__main__":
         
         model = NMF(
             embedding_dim=args.embedding_dim, 
-            num_epoch=10, 
+            num_epoch=args.num_epoch, 
             learning_rate=args.eta, 
             parallel=is_distributed)
         

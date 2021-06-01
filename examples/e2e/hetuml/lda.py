@@ -19,8 +19,8 @@ if __name__ == "__main__":
     parser.add_argument("--num_workers", type=int, default=1, help="Number of workers")
     parser.add_argument("--train_path", type=str, default="", help="Path to training data")
     parser.add_argument("--valid_path", type=str, default="", help="Path to validation data")
-    parser.add_argument("--embedding_dim", type=int, default=8, help="Size of hidden dimension")
     parser.add_argument("--num_words", type=int, default=-1, help="Number of words")
+    parser.add_argument("--num_epoch", type=int, default=10, help="Number of epochs")
     
     args = parser.parse_args()
     is_distributed = len(args.scheduler) > 0
@@ -37,9 +37,11 @@ if __name__ == "__main__":
         # load data
         rank = cluster.rank if is_distributed else 0
         num_workers = args.num_workers if is_distributed else 1
+        logging.info("Loading from {}...".format(args.train_path))
         train_data = Corpus.from_file(args.num_words, args.train_path, 
                                       rank=rank, 
                                       total_ranks=num_workers)
+        logging.info("Loading from {}...".format(args.valid_path))
         valid_data = Corpus.from_file(args.num_words, args.valid_path, 
                                       rank=rank, 
                                       total_ranks=num_workers)
@@ -47,7 +49,7 @@ if __name__ == "__main__":
         model = LDA(
             num_words=args.num_words, 
             num_topics=100, 
-            num_iters=10, 
+            num_iters=args.num_epoch, 
             parallel=is_distributed)
         
         logging.info("Start training...")

@@ -23,6 +23,7 @@ if __name__ == '__main__':
     try:
         train_path = sys.argv[1]
         valid_path = sys.argv[2]
+        num_epoch = 10
     except:
         raise Exception("Missing argument: <train_path> <valid_path>")
     
@@ -44,12 +45,12 @@ if __name__ == '__main__':
         learning_method='batch',
         total_samples=train_corpus.shape[0],
         batch_size=train_corpus.shape[0],
-        evaluate_every=100,
+        evaluate_every=10000,
         verbose=1)
     
     logging.info("Start training...")
     time_start = time.time()
-    for i in range(10):
+    for i in range(num_epoch):
         t0 = time.time()
         lda.partial_fit(train_corpus)
         llh = lda.score(valid_corpus)
