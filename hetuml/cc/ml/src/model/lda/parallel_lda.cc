@@ -33,14 +33,14 @@ void ParallelLDA::PrepareForFit(const Corpus &corpus) {
   PSAgent<int>::Get()->barrier();
 }
 
-double ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
+void ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
   int n_topics = this->params->num_topics;
   int n_words = this->params->num_words;
 
   // pull topic_dist and word_topic_dist from PS
   if (update) {
     ps_topic_dist->densePull(topic_dist_buffer.data(), n_topics);
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static)
     for (int nt = 0; nt < n_topics; nt++) {
       topic_dist[nt].store(topic_dist_buffer[nt]);
     }
@@ -51,17 +51,17 @@ double ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
   }
 
   // fit one iteration on local data shard
-  auto llh = LDA::SampleOneIteration(corpus, update);
+  LDA::SampleOneIteration(corpus, update);
 
   // push topic_dist and word_topic_dist to PS
   if (update) {
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static)
     for (int nt = 0; nt < n_topics; nt++) {
       topic_dist_buffer[nt] = topic_dist[nt] - topic_dist_buffer[nt];
     }
     ps_topic_dist->densePush(topic_dist_buffer.data(), n_topics);
     int nnz = 0;
-    #pragma omp parallel for schedule(dynamic) reduction(+ : nnz)
+    #pragma omp parallel for schedule(static) reduction(+ : nnz)
     for (int nn = 0; nn < n_words * n_topics; nn++) {
       word_topic_dist_buffer[nn] = \
         word_topic_dist[nn] - word_topic_dist_buffer[nn];
@@ -84,8 +84,6 @@ double ParallelLDA::SampleOneIteration(const Corpus& corpus, bool update) {
         n_topics * n_words);
     }
   }
-
-  return llh;
 }
 
 } // namespace lda

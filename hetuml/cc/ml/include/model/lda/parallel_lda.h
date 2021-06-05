@@ -18,7 +18,7 @@ public:
 private:
   void PrepareForFit(const Corpus& corpus) override;
 
-  double SampleOneIteration(const Corpus& corpus, bool update) override;
+  void SampleOneIteration(const Corpus& corpus, bool update) override;
 
   std::shared_ptr<PSVector<int>> ps_topic_dist;
   std::shared_ptr<PSVector<int>> ps_word_topic_dist;

@@ -81,18 +81,13 @@ void LDA::PrepareForPredict(const Corpus &corpus) {
   }
 }
 
-double LDA::SampleOneIteration(const Corpus& corpus, bool update) {
+void LDA::SampleOneIteration(const Corpus& corpus, bool update) {
   // long docs by MH, WARPLDA
   this->VisitByDoc(corpus, update);
   this->VisitByWord(corpus, update);
   
   // short docs by SA, F+LDA
   this->FTreeIteration(corpus, update);
-  
-  // calculate likelihood
-  auto llh = this->Loglikelihood(corpus);
-  
-  return llh;
 }
 
 void LDA::FTreeIteration(const Corpus &corpus, bool update) {
@@ -102,7 +97,7 @@ void LDA::FTreeIteration(const Corpus &corpus, bool update) {
   FTree tree(n_topics);
   std::vector<float> psum(n_topics);
 
-  #pragma omp parallel for schedule(dynamic) \
+  #pragma omp parallel for schedule(static) \
     firstprivate(psum, tree)
   for (int word = 0; word < corpus.n_words; ++word) {
     int thread = OMP_GET_THREAD_ID();
@@ -178,7 +173,7 @@ void LDA::VisitByWord(const Corpus &corpus, bool update) {
   int n_topics = this->params->num_topics;
   float beta = this->params->beta;
   
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel for schedule(static)
   for (int word = 0; word < corpus.n_words; ++word) {
     int thread = OMP_GET_THREAD_ID();
     int N = corpus.word_offset[word + 1] - corpus.word_offset[word];
@@ -240,7 +235,7 @@ void LDA::VisitByDoc(const Corpus &corpus, bool update) {
   std::vector<Token> tmp_token(n_topics);
 
   // deal with long docs
-  #pragma omp parallel for schedule(dynamic) \
+  #pragma omp parallel for schedule(static) \
     firstprivate(doc_dist, tmp_token)
   for (int doc = 0; doc < corpus.n_docs; ++doc) {
     if (!is_long_doc[doc])
@@ -303,7 +298,8 @@ double LDA::Loglikelihood(const Corpus &corpus) {
   std::vector<int> doc_dist;
 
   llh += corpus.n_docs * (lgamma(n_topics * alpha) - n_topics * lgamma(alpha));
-  #pragma omp parallel for schedule(dynamic) private(doc_dist) reduction(+:llh)
+  #pragma omp parallel for schedule(static) firstprivate(doc_dist) \
+    reduction(+:llh)
   for (int doc = 0; doc < corpus.n_docs; ++doc) {
     llh -= lgamma(corpus.GetDocSize(doc) + n_topics * alpha);
     if (is_long_doc[doc]) {
@@ -324,7 +320,7 @@ double LDA::Loglikelihood(const Corpus &corpus) {
   }
 
   llh += n_topics * (lgamma(beta * corpus.n_words) - corpus.n_words * lgamma(beta));
-  #pragma omp parallel for schedule(dynamic) reduction(+:llh)
+  #pragma omp parallel for schedule(static) reduction(+:llh)
   for (int word = 0; word < corpus.n_words; ++word) {
     for (int topic = 0; topic < n_topics; ++topic) {
       llh += lgamma(word_topic_dist[word * n_topics + topic] + beta);

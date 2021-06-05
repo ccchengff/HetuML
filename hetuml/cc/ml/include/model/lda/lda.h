@@ -128,7 +128,8 @@ public:
     this->PrepareForFit(corpus);
     for (int iter_id = 0; iter_id < this->params->num_iters; iter_id++) {
       TIK(iter);
-      auto llh = this->SampleOneIteration(corpus, true);
+      this->SampleOneIteration(corpus, true);
+      auto llh = this->Loglikelihood(corpus);
       TOK(iter);
       HML_LOG_INFO << "Iteration[" << iter_id + 1 << "] loglikelihood[" 
         << std::fixed << llh << "] cost " << COST_MSEC(iter) << " ms";
@@ -142,17 +143,15 @@ public:
     TIK(inference);
     this->PrepareForPredict(corpus);
     for (int iter_id = 0; iter_id < this->params->num_iters; iter_id++) {
-      TIK(iter);
-      auto llh = this->SampleOneIteration(corpus, false);
-      TOK(iter);
-      HML_LOG_INFO << "Iteration[" << iter_id + 1 << "] loglikelihood[" 
-        << std::fixed << llh << "] cost " << COST_MSEC(iter) << " ms";
+      this->SampleOneIteration(corpus, false);
     }
+    auto llh = this->Loglikelihood(corpus);
     std::vector<int> ret(corpus.n_tokens);
     for (int i = 0; i < corpus.n_tokens; i++)
       ret[i] = topics[i].topic;
     TOK(inference);
-    HML_LOG_INFO << "Inference cost " << COST_MSEC(inference) << " ms";
+    HML_LOG_INFO << "Inference cost " << COST_MSEC(inference) << " ms, "
+      << "loglikelihood[" << std::fixed << llh << "]";
     return std::move(ret);
   }
 
@@ -193,7 +192,7 @@ protected:
 
   virtual void PrepareForPredict(const Corpus& corpus);
 
-  virtual double SampleOneIteration(const Corpus& corpus, bool update);
+  virtual void SampleOneIteration(const Corpus& corpus, bool update);
 
   // deal with short docs using F+ tree.
   // iterate over words in short docs.
