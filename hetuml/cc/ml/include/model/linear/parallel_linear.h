@@ -149,6 +149,7 @@ public:
       args, SquareLoss<Val>::NAME, 
       RMSEMetric<Val, label_t, Val>::NAME) } {}
    inline const char* name() const override { return "LinearRegression"; }
+   inline bool is_regression() const { return true; }
 };
 
 

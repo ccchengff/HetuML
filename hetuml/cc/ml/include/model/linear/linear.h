@@ -142,7 +142,8 @@ public:
     for (size_t eid = 0; eid < this->params->num_epoch; eid++) {
       // train one epoch on training set
       auto train_loss = this->FitOneEpoch(train_data);
-      HML_LOG_INFO << "Epoch[" << eid << "] Train loss[" << train_loss << "]";
+      HML_LOG_INFO << "Epoch[" << eid << "] Train loss: " 
+        << this->params->loss << "[" << train_loss << "]";
       // evaluation on validation set
       if (num_valid > 0 && !metrics.empty()) {
         auto m = this->Evaluate(valid_data, metrics);
@@ -193,13 +194,20 @@ public:
     return this->model->dim;
   }
 
+  virtual bool is_regression() const { return false; }
+
 protected:
   virtual void InitModel(size_t max_dim) {
     ASSERT_GT(max_dim, 0) << "Illegal number of dimensions: " << max_dim;
     this->model.reset(new DenseVector<Val>(max_dim));
-    // XavierNormal init
-    NormalDistribution<Val>(this->model->values, max_dim, 
-      0, std::sqrt(2.0 / (max_dim + 1.0)));
+    if (this->is_regression()) {
+      // Zero init
+      std::fill(this->model->values, this->model->values + max_dim, 0);
+    } else {
+      // XavierNormal init
+      NormalDistribution<Val>(this->model->values, max_dim, 
+        0, std::sqrt(2.0 / (max_dim + 1.0)));
+    }
   }
 
   inline virtual Val FitOneEpoch(const Dataset<label_t, Val>& train_data) {
@@ -267,6 +275,7 @@ public:
       args, SquareLoss<Val>::NAME, 
       RMSEMetric<Val, label_t, Val>::NAME) } {}
   inline const char* name() const override { return "LinearRegression"; }
+  inline bool is_regression() const { return true; }
 };
 
 } // namespace linear
