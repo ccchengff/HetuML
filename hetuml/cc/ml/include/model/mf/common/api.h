@@ -353,7 +353,7 @@ double mf_cross_validation(mf_problem const *prob,
   return validator.do_cross_validation();
 }
 
-double calc_rmse(mf_problem *prob, mf_model *model) {
+double calc_mse(mf_problem *prob, mf_model *model) {
   if (prob->nnz == 0)
     return 0;
   double loss = 0;
@@ -365,7 +365,7 @@ double calc_rmse(mf_problem *prob, mf_model *model) {
     float e = N.r - mf_predict(*model, N.u, N.v);
     loss += e*e;
   }
-  return sqrt(loss / prob->nnz);
+  return loss / prob->nnz;
 }
 
 double calc_mae(mf_problem *prob, mf_model *model) {

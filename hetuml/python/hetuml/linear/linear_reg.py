@@ -13,7 +13,7 @@ class LinearRegression(SupervisedMLBase):
                  l1_reg: float = 0.0, 
                  l2_reg: float = 0.0, 
                  loss: str = "square", 
-                 metrics: str = "rmse", 
+                 metrics: str = "mse", 
                  parallel=False, 
                  aux_args=dict()):
         assert num_epoch > 0, "Number of epochs should be positive"

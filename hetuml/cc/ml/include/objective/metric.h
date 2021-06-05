@@ -79,15 +79,15 @@ public:
 };
 
 template<typename P, typename L, typename M>
-class RMSEMetric : public AverageEvalMetric<P, L, M> {
+class MSEMetric : public AverageEvalMetric<P, L, M> {
 public:
   friend class MetricFactory;
 
-  RMSEMetric(RMSEMetric const&) = delete;
+  MSEMetric(MSEMetric const&) = delete;
   
-  void operator=(RMSEMetric const&) = delete;
+  void operator=(MSEMetric const&) = delete;
 
-  ~RMSEMetric() {}
+  ~MSEMetric() {}
 
   M EvalBinaryOne(const P pred, const L label) const {
     M diff = pred - label;
@@ -108,8 +108,8 @@ public:
   inline const std::string& name() const { return NAME; }
   static const std::string NAME;
 private:
-  RMSEMetric() {}
-  static const RMSEMetric<P, L, M> INSTANCE;
+  MSEMetric() {}
+  static const MSEMetric<P, L, M> INSTANCE;
 };
 
 template<typename P, typename L, typename M>
@@ -314,9 +314,9 @@ private:
 };
 
 template<typename P, typename L, typename M>
-const RMSEMetric<P, L, M> RMSEMetric<P, L, M>::INSTANCE;
+const MSEMetric<P, L, M> MSEMetric<P, L, M>::INSTANCE;
 template<typename P, typename L, typename M>
-const std::string RMSEMetric<P, L, M>::NAME = "rmse";
+const std::string MSEMetric<P, L, M>::NAME = "mse";
 template<typename P, typename L, typename M>
 const ErrorMetric<P, L, M> ErrorMetric<P, L, M>::INSTANCE;
 template<typename P, typename L, typename M>
@@ -358,8 +358,8 @@ public:
   template <typename P, typename L, typename M>
   static const EvalMetric<P, L, M>*
   GetEvalMetric(const std::string& metric, bool neg_y = false) {
-    if (!metric.compare(RMSEMetric<P, L, M>::NAME)) {
-      return &RMSEMetric<P, L, M>::INSTANCE;
+    if (!metric.compare(MSEMetric<P, L, M>::NAME)) {
+      return &MSEMetric<P, L, M>::INSTANCE;
     } else if (!metric.compare(ErrorMetric<P, L, M>::NAME)) {
       if (!neg_y) {
         return &ErrorMetric<P, L, M>::INSTANCE;

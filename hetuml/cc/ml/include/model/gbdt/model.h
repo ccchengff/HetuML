@@ -50,8 +50,8 @@ namespace GBDTConf {
   static const std::string IS_MAJORITY_VOTING = "IS_MAJORITY_VOTING";
   static const bool DEFAULT_IS_MAJORITY_VOTING = false;
   // loss function and evaluation metrics
-  // loss functions: logistic, rmse
-  // evaluation metrics: log-loss, cross-entropy, error, precision, rmse
+  // loss functions: logistic, square
+  // evaluation metrics: log-loss, cross-entropy, error, precision, mse
   static const std::string LOSS = "LOSS";
   static const std::string METRICS = "METRICS";
 

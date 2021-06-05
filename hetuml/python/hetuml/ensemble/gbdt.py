@@ -46,12 +46,12 @@ class GBDT(SupervisedMLBase):
         assert max_leaf_weight >= 0, "Maximum leaf weight term should be non-negative"
         if loss == "auto":
             if is_regression is True:
-                loss = "rmse"
+                loss = "square"
             else:
                 loss = "logistic"
         if metrics == "auto":
             if is_regression is True:
-                metrics = "rmse"
+                metrics = "mse"
             elif num_label == 2:
                 metrics = "log-loss"
             else:

@@ -188,7 +188,7 @@ public:
   std::string get_error_legend() const {
     switch (fun) {
       case P_L2_MFR:
-        return std::string("rmse");
+        return std::string("mse");
         break;
       case P_L1_MFR:
         return std::string("mae");

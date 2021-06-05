@@ -273,7 +273,7 @@ public:
   inline LinearReg(const Args& args = {})
   : Linear<Val>{ LinearConf::AddObjectiveIfNotExists(
       args, SquareLoss<Val>::NAME, 
-      RMSEMetric<Val, label_t, Val>::NAME) } {}
+      MSEMetric<Val, label_t, Val>::NAME) } {}
   inline const char* name() const override { return "LinearRegression"; }
   inline bool is_regression() const { return true; }
 };
