@@ -19,3 +19,6 @@ set(pybind11_DIR)
 # if not found, we'll download and compile it in time
 set(ZMQ_ROOT)
 set(ZMQ_BUILD)
+
+# if you have a protoc in conda bin, ignore `/path/to/anaconda3/bin`
+set(CMAKE_IGNORE_PATH)

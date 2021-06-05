@@ -33,7 +33,7 @@ endif()
 # find protobuf
 find_package(Protobuf)
 if(NOT Protobuf_FOUND)
-  message(FATAL_ERROR "Protobuf not found, use `conda install protobuf`")
+  message(FATAL_ERROR "Protobuf not found")
 endif()
 
 set(PROTOBUF_GENERATE_CPP_APPEND_PATH TRUE)
