@@ -32,8 +32,8 @@ def test_predict(model, pred_data):
     pred = model.predict(pred_data)
     if isinstance(pred_data, coo_matrix):
         square_errors = np.power((pred - pred_data.data), 2)
-        rmse = np.sqrt(square_errors.sum() / square_errors.shape[0])
-        print("RMSE: {:.6f}".format(rmse))
+        mse = square_errors.sum() / square_errors.shape[0]
+        print("MSE: {:.6f}".format(mse))
     print(LOG_PREFIX + "Test prediction of " + model.name() + " passed" + LOG_SUFFIX)
     return pred
 
