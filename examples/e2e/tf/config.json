@@ -1,5 +1,0 @@
-{
-  "ps": ["localhost:50010"],
-  "worker": ["localhost:50011"]
-}
-
