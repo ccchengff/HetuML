@@ -1,4 +1,5 @@
 # compile hetuml
+set(CMAKE_CXX_STANDARD 14)
 
 file(GLOB_RECURSE HETUML_SRC src/*.cc)
 list(REMOVE_ITEM HETUML_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/python_binding/api.cc)
@@ -12,7 +13,7 @@ target_include_directories(hetuml PUBLIC src)
 
 if(HETU_PARALLEL_ML)
   target_include_directories(hetuml PUBLIC ${PS_SRC}/include)
-  target_link_libraries(hetuml PUBLIC ps)
+  target_link_libraries(hetuml PUBLIC hetuml_ps)
 endif()
 
 # pybind11

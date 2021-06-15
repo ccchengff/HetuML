@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.11)
 
 project(HetuML CXX)
 
-include(cmake/config.cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -19,6 +18,6 @@ endif()
 
 if(HETU_PARALLEL_ML)
   add_definitions(-DWITH_PARALLEL)
-  add_subdirectory(${CMAKE_SOURCE_DIR}/hetuml/cc/ps-lite)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/hetuml/cc/ps-lite)
 endif()
-add_subdirectory(${CMAKE_SOURCE_DIR}/hetuml/cc/ml)
+add_subdirectory(${PROJECT_SOURCE_DIR}/hetuml/cc/ml)
