@@ -165,7 +165,7 @@ public:
     ret.resize(end_id - start_id);
     for (size_t ins_id = start_id; ins_id < end_id; ins_id++) {
       const auto& feature = features.get_sparse_feature(ins_id);
-      ret[ins_id - start_id] = this->model->dot(feature);
+      ret[ins_id - start_id] = this->model->dot(feature) + this->intercept;
     }
   }
   
@@ -173,9 +173,9 @@ public:
     size_t max_dim;
     is >> max_dim;
     this->InitModel(max_dim);
-    for (size_t dim = 0; dim < max_dim; dim++) {
+    for (size_t dim = 0; dim < max_dim; dim++) 
       is >> this->model->values[dim];
-    }
+    is >> this->intercept;
   }
 
   inline void DumpToStream(std::ostream& os) override {
@@ -183,6 +183,7 @@ public:
     os << max_dim << std::endl;
     for (size_t dim = 0; dim < max_dim; dim++)
       os << this->model->values[dim] << std::endl;
+    os << this->intercept << std::endl;
   }
 
   inline bool is_empty() const { 
@@ -208,6 +209,7 @@ protected:
       NormalDistribution<Val>(this->model->values, max_dim, 
         0, std::sqrt(2.0 / (max_dim + 1.0)));
     }
+    this->intercept = 0;
   }
 
   inline virtual Val FitOneEpoch(const Dataset<label_t, Val>& train_data) {
@@ -238,11 +240,13 @@ protected:
       batch_loss += loss_func->loss(pred, label);
       Val grad_multipler = loss_func->grad(pred, label);
       this->model->axp0(feature, step * grad_multipler);
+      this->intercept += step * grad_multipler;
     }
     return batch_loss / (end_id - start_id);
   }
 
   std::unique_ptr<DenseVector<Val>> model;
+  Val intercept;
 };
 
 template <typename Val>
